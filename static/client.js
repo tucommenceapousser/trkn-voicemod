@@ -17,18 +17,12 @@ document.getElementById("start").onclick = async () => {
             const formData = new FormData();
             formData.append("audio", blob, "live_audio.webm");
 
-            const response = await fetch("/live", {
-                method: "POST",
-                body: formData
-            });
-
+            const response = await fetch("/live", { method: "POST", body: formData });
             const audioBlob = await response.blob();
             const url = URL.createObjectURL(audioBlob);
             output.src = url;
         }
     };
-
-    mediaRecorder.onstop = () => console.log("Recording stopped");
 };
 
 document.getElementById("stop").onclick = () => {
