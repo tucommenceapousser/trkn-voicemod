@@ -1,11 +1,24 @@
 from flask import Flask, request, render_template, send_file
 import openai
 import os
-from pydub import AudioSegment
+import subprocess
 import io
 
 app = Flask(__name__)
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+def convert_to_wav(input_file):
+    """Convertir n’importe quel audio en wav mono 16kHz via ffmpeg"""
+    output = io.BytesIO()
+    process = subprocess.run(
+        ['ffmpeg', '-i', 'pipe:0', '-ar', '16000', '-ac', '1', '-f', 'wav', 'pipe:1'],
+        input=input_file.read(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL
+    )
+    output.write(process.stdout)
+    output.seek(0)
+    return output
 
 @app.route('/')
 def index():
@@ -15,17 +28,14 @@ def index():
 def upload_audio():
     if 'audio' not in request.files:
         return "Aucun fichier envoyé", 400
-    
+
     file = request.files['audio']
     if file.filename == '':
         return "Fichier vide", 400
 
-    audio = AudioSegment.from_file(file)
-    buf = io.BytesIO()
-    audio.export(buf, format='wav')
-    buf.seek(0)
+    wav_file = convert_to_wav(file)
 
-    # Appel OpenAI TTS
+    # Génération TTS OpenAI
     response = openai.audio.speech.create(
         model="gpt-4o-mini-tts",
         voice="alloy",
@@ -34,7 +44,7 @@ def upload_audio():
 
     tts_audio = io.BytesIO(response.audio)
     tts_audio.seek(0)
-    
+
     return send_file(
         tts_audio,
         mimetype="audio/mpeg",
@@ -42,20 +52,16 @@ def upload_audio():
         download_name="voice_modified.mp3"
     )
 
-# Endpoint pour live audio streaming
 @app.route('/live', methods=['POST'])
 def live_audio():
-    # Recevoir un petit segment audio depuis le front
     data = request.files['audio'].read()
-    buf = io.BytesIO(data)
-    audio = AudioSegment.from_file(buf)
-    
-    # Ici on pourrait faire du TTS ou filtrage, pour l'instant on renvoie juste le même audio
-    output = io.BytesIO()
-    audio.export(output, format='wav')
-    output.seek(0)
-    
-    return send_file(output, mimetype="audio/wav")
+    wav_file = convert_to_wav(io.BytesIO(data))
+
+    # Pour le live on renvoie le même wav (optionnel: TTS temps réel)
+    return send_file(
+        wav_file,
+        mimetype="audio/wav"
+    )
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
