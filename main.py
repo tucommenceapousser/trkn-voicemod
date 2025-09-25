@@ -20,6 +20,24 @@ def convert_to_wav(input_file):
     output.seek(0)
     return output
 
+@app.route('/test_voice/<voice>')
+def test_voice(voice):
+    output = io.BytesIO()
+    with client.audio.speech.with_streaming_response.create(
+        model="gpt-4o-tts",
+        voice=voice,
+        input="Salut ! Ici la voix de test générée par trhacknon."
+    ) as response:
+        response.stream_to_file(output)
+
+    output.seek(0)
+    return send_file(
+        output,
+        mimetype="audio/mpeg",
+        as_attachment=True,
+        download_name=f"voice_{voice}.mp3"
+    )
+
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -39,8 +57,8 @@ def upload_audio():
     # ✅ Nouvelle syntaxe TTS OpenAI
     output = io.BytesIO()
     with client.audio.speech.with_streaming_response.create(
-        model="gpt-4o-mini-tts",
-        voice="alloy",
+        model="gpt-4o-tts",
+        voice="fable",
         input="Salut ! Voici ta voix transformée par trhacknon."
     ) as response:
         response.stream_to_file(output)
