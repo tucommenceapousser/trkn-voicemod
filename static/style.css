@@ -1,0 +1,41 @@
+body {
+    font-family: 'Courier New', monospace;
+    background-color: #111;
+    color: #0f0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 50px;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    width: 500px;
+    background-color: #222;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px #0f0;
+}
+
+h1, h2 {
+    color: #0f0;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+input, button {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+}
+
+button {
+    background-color: #0f0;
+    color: #000;
+    cursor: pointer;
+    font-weight: bold;
+}
