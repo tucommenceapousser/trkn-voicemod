@@ -6,7 +6,6 @@ from openai import OpenAI
 
 app = Flask(__name__)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-#openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def convert_to_wav(input_file):
     """Convertir n’importe quel audio en wav mono 16kHz via ffmpeg"""
@@ -25,7 +24,6 @@ def convert_to_wav(input_file):
 def index():
     return render_template("index.html")
 
-
 @app.route('/upload', methods=['POST'])
 def upload_audio():
     if 'audio' not in request.files:
@@ -35,9 +33,10 @@ def upload_audio():
     if file.filename == '':
         return "Fichier vide", 400
 
+    # Conversion (pas utilisée pour la démo TTS statique, mais utile si tu veux transcrire avant)
     wav_file = convert_to_wav(file)
 
-    # ✅ Nouvelle syntaxe TTS
+    # ✅ Nouvelle syntaxe TTS OpenAI
     output = io.BytesIO()
     with client.audio.speech.with_streaming_response.create(
         model="gpt-4o-mini-tts",
@@ -53,12 +52,14 @@ def upload_audio():
         as_attachment=True,
         download_name="voice_modified.mp3"
     )
+
 @app.route('/live', methods=['POST'])
 def live_audio():
     data = request.files['audio'].read()
     wav_file = convert_to_wav(io.BytesIO(data))
 
-    # Pour le live on renvoie le même wav (optionnel: TTS temps réel)
+    # Pour l’instant : on renvoie l’audio brut converti
+    # (tu peux remplacer ça par un TTS dynamique si tu veux un vrai modulateur live)
     return send_file(
         wav_file,
         mimetype="audio/wav"
