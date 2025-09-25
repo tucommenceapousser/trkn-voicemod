@@ -1,11 +1,12 @@
 from flask import Flask, request, render_template, send_file
-import openai
 import os
 import subprocess
 import io
+from openai import OpenAI
 
 app = Flask(__name__)
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+#openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def convert_to_wav(input_file):
     """Convertir n’importe quel audio en wav mono 16kHz via ffmpeg"""
@@ -24,6 +25,7 @@ def convert_to_wav(input_file):
 def index():
     return render_template("index.html")
 
+
 @app.route('/upload', methods=['POST'])
 def upload_audio():
     if 'audio' not in request.files:
@@ -35,23 +37,22 @@ def upload_audio():
 
     wav_file = convert_to_wav(file)
 
-    # Génération TTS OpenAI
-    response = openai.audio.speech.create(
+    # ✅ Nouvelle syntaxe TTS
+    output = io.BytesIO()
+    with client.audio.speech.with_streaming_response.create(
         model="gpt-4o-mini-tts",
         voice="alloy",
         input="Salut ! Voici ta voix transformée par trhacknon."
-    )
+    ) as response:
+        response.stream_to_file(output)
 
-    tts_audio = io.BytesIO(response.audio)
-    tts_audio.seek(0)
-
+    output.seek(0)
     return send_file(
-        tts_audio,
+        output,
         mimetype="audio/mpeg",
         as_attachment=True,
         download_name="voice_modified.mp3"
     )
-
 @app.route('/live', methods=['POST'])
 def live_audio():
     data = request.files['audio'].read()
